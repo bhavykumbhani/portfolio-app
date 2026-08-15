@@ -1,29 +1,32 @@
 import fs from 'fs';
 import path from 'path';
 import { Profile, Skill, Project, Experience, Education, Certification, JourneyEntry } from '@/types';
+import { connectToDatabase } from '@/lib/mongodb';
+import {
+  ProfileModel,
+  SkillModel,
+  ProjectModel,
+  ExperienceModel,
+  EducationModel,
+  CertificationModel,
+  JourneyModel,
+} from '@/lib/models';
 
-// Central data directory path
 const DATA_DIR = path.join(process.cwd(), 'src', 'data');
 const GITHUB_REPO = process.env.GITHUB_REPOSITORY || 'bhavykumbhani/portfolio-app';
 
-// Ensure directory exists
 function ensureDirectoryExists() {
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
   } catch (err) {
-    // Ignore read-only dir errors in serverless
+    // Ignore read-only dir errors
   }
 }
 
-// In-memory fallback caches
 const memoryCaches: Record<string, any> = {};
 
-/**
- * Syncs updated data back to GitHub repository if GITHUB_TOKEN is configured.
- * This makes Admin panel saves permanent on Vercel without needing a separate database!
- */
 async function syncToGitHub(filename: string, data: any) {
   const token = process.env.GITHUB_TOKEN;
   if (!token) return;
@@ -37,7 +40,6 @@ async function syncToGitHub(filename: string, data: any) {
       'User-Agent': 'Portfolio-App',
     };
 
-    // 1. Fetch current file SHA
     const getRes = await fetch(url, { headers, cache: 'no-store' });
     let sha = '';
     if (getRes.ok) {
@@ -45,7 +47,6 @@ async function syncToGitHub(filename: string, data: any) {
       sha = fileInfo.sha;
     }
 
-    // 2. Commit updated JSON directly to GitHub main/master branch
     const content = Buffer.from(JSON.stringify(data, null, 2)).toString('base64');
     await fetch(url, {
       method: 'PUT',
@@ -61,7 +62,6 @@ async function syncToGitHub(filename: string, data: any) {
   }
 }
 
-// Helper to read JSON file
 function readDataFile<T>(filename: string, defaultValue: T): T {
   ensureDirectoryExists();
   const filePath = path.join(DATA_DIR, filename);
@@ -84,21 +84,18 @@ function readDataFile<T>(filename: string, defaultValue: T): T {
   }
 }
 
-// Helper to write JSON file
 function writeDataFile<T>(filename: string, data: T): boolean {
   ensureDirectoryExists();
   const filePath = path.join(DATA_DIR, filename);
 
   memoryCaches[filename] = data;
 
-  // 1. Try local disk write (works in dev & VPS)
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
   } catch (error) {
-    // Read-only environment on Vercel lambda - handled gracefully
+    // Read-only filesystem
   }
 
-  // 2. Sync directly to GitHub repository if GITHUB_TOKEN is available
   if (process.env.GITHUB_TOKEN) {
     syncToGitHub(filename, data).catch((err) =>
       console.error('Failed to sync to GitHub:', err)
@@ -112,7 +109,8 @@ function writeDataFile<T>(filename: string, data: T): boolean {
    PROFILE DATA CRUD
    ========================================================================== */
 export async function getProfile(): Promise<Profile> {
-  return readDataFile<Profile>('profile.json', {
+  const db = await connectToDatabase();
+  const defaultProfile = readDataFile<Profile>('profile.json', {
     name: 'Bhavy Kumbhani',
     currentRole: 'Web Developer',
     exploring: 'AI/ML & Data Analytics',
@@ -122,12 +120,49 @@ export async function getProfile(): Promise<Profile> {
     location: 'Gujarat, India',
     githubUrl: '',
     linkedinUrl: '',
-    resumeUrl: ''
+    resumeUrl: '',
   });
+
+  if (db) {
+    try {
+      let doc = await ProfileModel.findOne({}).lean();
+      if (!doc) {
+        doc = await ProfileModel.create(defaultProfile);
+      }
+      return {
+        name: doc.name,
+        avatarUrl: doc.avatarUrl || '',
+        currentRole: doc.currentRole,
+        exploring: doc.exploring,
+        shortBio: doc.shortBio,
+        longBio: doc.longBio,
+        email: doc.email,
+        location: doc.location,
+        githubUrl: doc.githubUrl || '',
+        linkedinUrl: doc.linkedinUrl || '',
+        resumeUrl: doc.resumeUrl || '',
+        statusText: doc.statusText || '',
+      };
+    } catch (err) {
+      console.error('Error fetching profile from MongoDB:', err);
+    }
+  }
+
+  return defaultProfile;
 }
 
 export async function updateProfile(data: Profile): Promise<Profile> {
+  const db = await connectToDatabase();
   writeDataFile<Profile>('profile.json', data);
+
+  if (db) {
+    try {
+      await ProfileModel.findOneAndUpdate({}, data, { upsert: true, new: true });
+    } catch (err) {
+      console.error('Error updating profile in MongoDB:', err);
+    }
+  }
+
   return data;
 }
 
@@ -135,11 +170,46 @@ export async function updateProfile(data: Profile): Promise<Profile> {
    SKILLS DATA CRUD
    ========================================================================== */
 export async function getSkills(): Promise<Skill[]> {
-  return readDataFile<Skill[]>('skills.json', []);
+  const db = await connectToDatabase();
+  const defaultSkills = readDataFile<Skill[]>('skills.json', []);
+
+  if (db) {
+    try {
+      const docs = await SkillModel.find({}).lean();
+      if (docs.length === 0 && defaultSkills.length > 0) {
+        await SkillModel.insertMany(defaultSkills);
+        return defaultSkills;
+      }
+      return docs.map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        category: d.category,
+        status: d.status,
+        order: d.order,
+      }));
+    } catch (err) {
+      console.error('Error fetching skills from MongoDB:', err);
+    }
+  }
+
+  return defaultSkills;
 }
 
 export async function saveSkills(skills: Skill[]): Promise<Skill[]> {
+  const db = await connectToDatabase();
   writeDataFile<Skill[]>('skills.json', skills);
+
+  if (db) {
+    try {
+      await SkillModel.deleteMany({});
+      if (skills.length > 0) {
+        await SkillModel.insertMany(skills);
+      }
+    } catch (err) {
+      console.error('Error saving skills to MongoDB:', err);
+    }
+  }
+
   return skills;
 }
 
@@ -147,11 +217,59 @@ export async function saveSkills(skills: Skill[]): Promise<Skill[]> {
    PROJECTS DATA CRUD
    ========================================================================== */
 export async function getProjects(): Promise<Project[]> {
-  return readDataFile<Project[]>('projects.json', []);
+  const db = await connectToDatabase();
+  const defaultProjects = readDataFile<Project[]>('projects.json', []);
+
+  if (db) {
+    try {
+      const docs = await ProjectModel.find({}).lean();
+      if (docs.length === 0 && defaultProjects.length > 0) {
+        await ProjectModel.insertMany(defaultProjects);
+        return defaultProjects;
+      }
+      return docs.map((d: any) => ({
+        id: d.id,
+        title: d.title,
+        slug: d.slug,
+        description: d.description,
+        longDescription: d.longDescription,
+        image: d.image || '',
+        screenshots: d.screenshots || [],
+        technologies: d.technologies || [],
+        category: d.category,
+        githubUrl: d.githubUrl || '',
+        liveUrl: d.liveUrl || '',
+        status: d.status || 'Completed',
+        featured: d.featured || false,
+        startDate: d.startDate || '',
+        endDate: d.endDate || '',
+        features: d.features || [],
+        challenges: d.challenges || [],
+        learnings: d.learnings || [],
+      }));
+    } catch (err) {
+      console.error('Error fetching projects from MongoDB:', err);
+    }
+  }
+
+  return defaultProjects;
 }
 
 export async function saveProjects(projects: Project[]): Promise<Project[]> {
+  const db = await connectToDatabase();
   writeDataFile<Project[]>('projects.json', projects);
+
+  if (db) {
+    try {
+      await ProjectModel.deleteMany({});
+      if (projects.length > 0) {
+        await ProjectModel.insertMany(projects);
+      }
+    } catch (err) {
+      console.error('Error saving projects to MongoDB:', err);
+    }
+  }
+
   return projects;
 }
 
@@ -163,7 +281,7 @@ export async function addProject(project: Omit<Project, 'id' | 'slug'>): Promise
   const newProject: Project = {
     ...project,
     id,
-    slug
+    slug,
   };
   
   projects.push(newProject);
@@ -184,7 +302,7 @@ export async function updateProject(id: string, updatedData: Partial<Project>): 
   projects[idx] = {
     ...projects[idx],
     ...updatedData,
-    slug
+    slug,
   } as Project;
 
   await saveProjects(projects);
@@ -203,11 +321,51 @@ export async function deleteProject(id: string): Promise<boolean> {
    EXPERIENCE DATA CRUD
    ========================================================================== */
 export async function getExperience(): Promise<Experience[]> {
-  return readDataFile<Experience[]>('experience.json', []);
+  const db = await connectToDatabase();
+  const defaultExp = readDataFile<Experience[]>('experience.json', []);
+
+  if (db) {
+    try {
+      const docs = await ExperienceModel.find({}).lean();
+      if (docs.length === 0 && defaultExp.length > 0) {
+        await ExperienceModel.insertMany(defaultExp);
+        return defaultExp;
+      }
+      return docs.map((d: any) => ({
+        id: d.id,
+        company: d.company,
+        role: d.role,
+        location: d.location || '',
+        startDate: d.startDate || '',
+        endDate: d.endDate || '',
+        description: d.description,
+        technologies: d.technologies || [],
+        website: d.website || '',
+        logo: d.logo || '',
+      }));
+    } catch (err) {
+      console.error('Error fetching experience from MongoDB:', err);
+    }
+  }
+
+  return defaultExp;
 }
 
 export async function saveExperience(experience: Experience[]): Promise<Experience[]> {
+  const db = await connectToDatabase();
   writeDataFile<Experience[]>('experience.json', experience);
+
+  if (db) {
+    try {
+      await ExperienceModel.deleteMany({});
+      if (experience.length > 0) {
+        await ExperienceModel.insertMany(experience);
+      }
+    } catch (err) {
+      console.error('Error saving experience to MongoDB:', err);
+    }
+  }
+
   return experience;
 }
 
@@ -215,7 +373,7 @@ export async function addExperience(exp: Omit<Experience, 'id'>): Promise<Experi
   const experience = await getExperience();
   const newExp: Experience = {
     ...exp,
-    id: 'exp-' + Date.now().toString()
+    id: 'exp-' + Date.now().toString(),
   };
   experience.push(newExp);
   await saveExperience(experience);
@@ -229,7 +387,7 @@ export async function updateExperience(id: string, updatedData: Partial<Experien
   
   experience[idx] = {
     ...experience[idx],
-    ...updatedData
+    ...updatedData,
   } as Experience;
   
   await saveExperience(experience);
@@ -248,11 +406,49 @@ export async function deleteExperience(id: string): Promise<boolean> {
    EDUCATION DATA CRUD
    ========================================================================== */
 export async function getEducation(): Promise<Education[]> {
-  return readDataFile<Education[]>('education.json', []);
+  const db = await connectToDatabase();
+  const defaultEdu = readDataFile<Education[]>('education.json', []);
+
+  if (db) {
+    try {
+      const docs = await EducationModel.find({}).lean();
+      if (docs.length === 0 && defaultEdu.length > 0) {
+        await EducationModel.insertMany(defaultEdu);
+        return defaultEdu;
+      }
+      return docs.map((d: any) => ({
+        id: d.id,
+        degree: d.degree,
+        institution: d.institution,
+        location: d.location || '',
+        startDate: d.startDate || '',
+        endDate: d.endDate || '',
+        description: d.description,
+        grade: d.grade || '',
+      }));
+    } catch (err) {
+      console.error('Error fetching education from MongoDB:', err);
+    }
+  }
+
+  return defaultEdu;
 }
 
 export async function saveEducation(education: Education[]): Promise<Education[]> {
+  const db = await connectToDatabase();
   writeDataFile<Education[]>('education.json', education);
+
+  if (db) {
+    try {
+      await EducationModel.deleteMany({});
+      if (education.length > 0) {
+        await EducationModel.insertMany(education);
+      }
+    } catch (err) {
+      console.error('Error saving education to MongoDB:', err);
+    }
+  }
+
   return education;
 }
 
@@ -260,7 +456,7 @@ export async function addEducation(edu: Omit<Education, 'id'>): Promise<Educatio
   const education = await getEducation();
   const newEdu: Education = {
     ...edu,
-    id: 'edu-' + Date.now().toString()
+    id: 'edu-' + Date.now().toString(),
   };
   education.push(newEdu);
   await saveEducation(education);
@@ -274,7 +470,7 @@ export async function updateEducation(id: string, updatedData: Partial<Education
   
   education[idx] = {
     ...education[idx],
-    ...updatedData
+    ...updatedData,
   } as Education;
   
   await saveEducation(education);
@@ -293,11 +489,48 @@ export async function deleteEducation(id: string): Promise<boolean> {
    CERTIFICATIONS DATA CRUD
    ========================================================================== */
 export async function getCertifications(): Promise<Certification[]> {
-  return readDataFile<Certification[]>('certifications.json', []);
+  const db = await connectToDatabase();
+  const defaultCerts = readDataFile<Certification[]>('certifications.json', []);
+
+  if (db) {
+    try {
+      const docs = await CertificationModel.find({}).lean();
+      if (docs.length === 0 && defaultCerts.length > 0) {
+        await CertificationModel.insertMany(defaultCerts);
+        return defaultCerts;
+      }
+      return docs.map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        issuingOrganization: d.issuingOrganization,
+        date: d.date || '',
+        credentialId: d.credentialId || '',
+        credentialUrl: d.credentialUrl || '',
+        image: d.image || '',
+      }));
+    } catch (err) {
+      console.error('Error fetching certifications from MongoDB:', err);
+    }
+  }
+
+  return defaultCerts;
 }
 
 export async function saveCertifications(certs: Certification[]): Promise<Certification[]> {
+  const db = await connectToDatabase();
   writeDataFile<Certification[]>('certifications.json', certs);
+
+  if (db) {
+    try {
+      await CertificationModel.deleteMany({});
+      if (certs.length > 0) {
+        await CertificationModel.insertMany(certs);
+      }
+    } catch (err) {
+      console.error('Error saving certifications to MongoDB:', err);
+    }
+  }
+
   return certs;
 }
 
@@ -305,7 +538,7 @@ export async function addCertification(cert: Omit<Certification, 'id'>): Promise
   const certs = await getCertifications();
   const newCert: Certification = {
     ...cert,
-    id: 'cert-' + Date.now().toString()
+    id: 'cert-' + Date.now().toString(),
   };
   certs.push(newCert);
   await saveCertifications(certs);
@@ -319,7 +552,7 @@ export async function updateCertification(id: string, updatedData: Partial<Certi
   
   certs[idx] = {
     ...certs[idx],
-    ...updatedData
+    ...updatedData,
   } as Certification;
   
   await saveCertifications(certs);
@@ -338,11 +571,49 @@ export async function deleteCertification(id: string): Promise<boolean> {
    JOURNEY TIMELINE DATA CRUD
    ========================================================================== */
 export async function getJourney(): Promise<JourneyEntry[]> {
-  return readDataFile<JourneyEntry[]>('journey.json', []);
+  const db = await connectToDatabase();
+  const defaultJourney = readDataFile<JourneyEntry[]>('journey.json', []);
+
+  if (db) {
+    try {
+      const docs = await JourneyModel.find({}).lean();
+      if (docs.length === 0 && defaultJourney.length > 0) {
+        await JourneyModel.insertMany(defaultJourney);
+        return defaultJourney;
+      }
+      return docs.map((d: any) => ({
+        id: d.id,
+        year: d.year,
+        title: d.title,
+        description: d.description,
+        type: d.type,
+        technologies: d.technologies || [],
+        link: d.link || '',
+        status: d.status || '',
+      }));
+    } catch (err) {
+      console.error('Error fetching journey from MongoDB:', err);
+    }
+  }
+
+  return defaultJourney;
 }
 
 export async function saveJourney(journey: JourneyEntry[]): Promise<JourneyEntry[]> {
+  const db = await connectToDatabase();
   writeDataFile<JourneyEntry[]>('journey.json', journey);
+
+  if (db) {
+    try {
+      await JourneyModel.deleteMany({});
+      if (journey.length > 0) {
+        await JourneyModel.insertMany(journey);
+      }
+    } catch (err) {
+      console.error('Error saving journey to MongoDB:', err);
+    }
+  }
+
   return journey;
 }
 
@@ -350,7 +621,7 @@ export async function addJourneyEntry(entry: Omit<JourneyEntry, 'id'>): Promise<
   const journey = await getJourney();
   const newEntry: JourneyEntry = {
     ...entry,
-    id: 'journey-' + Date.now().toString()
+    id: 'journey-' + Date.now().toString(),
   };
   journey.push(newEntry);
   journey.sort((a, b) => b.year.localeCompare(a.year));
@@ -365,7 +636,7 @@ export async function updateJourneyEntry(id: string, updatedData: Partial<Journe
   
   journey[idx] = {
     ...journey[idx],
-    ...updatedData
+    ...updatedData,
   } as JourneyEntry;
   
   journey.sort((a, b) => b.year.localeCompare(a.year));
