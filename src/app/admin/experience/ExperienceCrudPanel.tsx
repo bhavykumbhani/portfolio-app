@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Experience } from '@/types';
 import { Plus, Edit3, Trash2, ArrowLeft, Save, CheckCircle, Briefcase } from 'lucide-react';
+import { FileUploadInput } from '@/components/admin/FileUploadInput';
 
 interface ExperienceCrudPanelProps {
   initialExperiences: Experience[];
@@ -288,6 +289,18 @@ export function ExperienceCrudPanel({ initialExperiences }: ExperienceCrudPanelP
               value={formData.website}
               onChange={handleFormChange}
               className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-lg bg-zinc-50/50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <FileUploadInput
+              id="logo"
+              label="Company Logo Image"
+              value={formData.logo || ''}
+              onChange={(url) => setFormData((prev) => ({ ...prev, logo: url }))}
+              accept="image/*"
+              fileType="image"
+              description="Click to select & upload company logo from disk"
             />
           </div>
         </div>

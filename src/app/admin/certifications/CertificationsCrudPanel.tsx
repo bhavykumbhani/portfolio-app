@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Certification } from '@/types';
 import { Plus, Edit3, Trash2, ArrowLeft, Save, CheckCircle, Award } from 'lucide-react';
+import { FileUploadInput } from '@/components/admin/FileUploadInput';
 
 interface CertificationsCrudPanelProps {
   initialCertifications: Certification[];
@@ -268,15 +269,15 @@ export function CertificationsCrudPanel({ initialCertifications }: Certification
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="image" className="text-xs font-mono text-zinc-400 dark:text-zinc-555">Certificate Image Path</label>
-            <input
-              type="text"
+          <div className="md:col-span-2">
+            <FileUploadInput
               id="image"
-              placeholder="e.g. /images/cert-aws.jpg"
+              label="Certificate Document / Image"
               value={formData.image || ''}
-              onChange={handleFormChange}
-              className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-lg bg-zinc-50/50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
+              onChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
+              accept="image/*,.pdf"
+              fileType="any"
+              description="Click to select & upload certificate document or image from disk"
             />
           </div>
         </div>

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Profile } from '@/types';
 import { Save, CheckCircle } from 'lucide-react';
+import { FileUploadInput } from '@/components/admin/FileUploadInput';
 
 interface ProfileFormProps {
   initialProfile: Profile;
@@ -45,6 +46,10 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setProfile((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleFileUpload = (field: 'resumeUrl' | 'avatarUrl', url: string) => {
+    setProfile((prev) => ({ ...prev, [field]: url }));
   };
 
   return (
@@ -107,7 +112,7 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
         </div>
       </div>
 
-      {/* Grid: Contact & Locations */}
+      {/* Grid: Contact & Socials */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-1.5">
           <label htmlFor="email" className="text-xs font-mono text-zinc-400 dark:text-zinc-550">Email Address</label>
@@ -156,18 +161,29 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
             className="w-full px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-lg bg-zinc-50/50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
           />
         </div>
+      </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor="resumeUrl" className="text-xs font-mono text-zinc-400 dark:text-zinc-550">Resume Link / Path</label>
-          <input
-            type="text"
-            id="resumeUrl"
-            required
-            value={profile.resumeUrl}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-lg bg-zinc-50/50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
-          />
-        </div>
+      {/* Grid: Resume PDF & Profile Photo Uploads */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+        <FileUploadInput
+          id="resumeUrl"
+          label="Resume PDF Document"
+          value={profile.resumeUrl}
+          onChange={(url) => handleFileUpload('resumeUrl', url)}
+          accept=".pdf,application/pdf"
+          fileType="pdf"
+          description="Click to select & upload your Resume PDF directly from your computer disk"
+        />
+
+        <FileUploadInput
+          id="avatarUrl"
+          label="Profile Photo / Avatar"
+          value={profile.avatarUrl || ''}
+          onChange={(url) => handleFileUpload('avatarUrl', url)}
+          accept="image/*"
+          fileType="image"
+          description="Click to select & upload your profile image from disk"
+        />
       </div>
 
       {/* Bios */}
@@ -206,3 +222,4 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
     </form>
   );
 }
+
