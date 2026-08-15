@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getProjects, addProject } from '@/lib/data-service';
 import { isAuthenticated } from '@/lib/auth-server';
 
@@ -24,6 +25,7 @@ export async function POST(request: Request) {
     }
 
     const newProject = await addProject(data);
+    revalidatePath('/');
     return NextResponse.json(newProject, { status: 201 });
   } catch (error) {
     console.error('Error adding project:', error);

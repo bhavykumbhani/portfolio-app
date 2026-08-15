@@ -21,7 +21,7 @@ import { Certifications } from '@/components/certifications';
 import { Contact } from '@/components/contact';
 import { Footer } from '@/components/footer';
 
-export const revalidate = 0; // Disable caching to reflect CMS changes instantly
+export const revalidate = 60; // Cache at Vercel Edge CDN for super-fast loading, auto-revalidated on Admin edits
 
 export default async function Page() {
   // Fetch all centralized data on the server

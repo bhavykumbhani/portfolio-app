@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getSkills, saveSkills } from '@/lib/data-service';
 import { isAuthenticated } from '@/lib/auth-server';
 
@@ -24,6 +25,7 @@ export async function POST(request: Request) {
     }
 
     const updated = await saveSkills(data);
+    revalidatePath('/');
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to save skills' }, { status: 500 });
