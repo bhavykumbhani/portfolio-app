@@ -4,24 +4,69 @@ import { Profile, Skill, Project, Experience, Education, Certification, JourneyE
 
 // Central data directory path
 const DATA_DIR = path.join(process.cwd(), 'src', 'data');
+const GITHUB_REPO = process.env.GITHUB_REPOSITORY || 'bhavykumbhani/portfolio-app';
 
-// Ensure directory exists (primarily for safety)
+// Ensure directory exists
 function ensureDirectoryExists() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+  } catch (err) {
+    // Ignore read-only dir errors in serverless
   }
 }
 
-// In-memory fallback caches for Vercel production environments (where files are read-only)
+// In-memory fallback caches
 const memoryCaches: Record<string, any> = {};
+
+/**
+ * Syncs updated data back to GitHub repository if GITHUB_TOKEN is configured.
+ * This makes Admin panel saves permanent on Vercel without needing a separate database!
+ */
+async function syncToGitHub(filename: string, data: any) {
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) return;
+
+  try {
+    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/src/data/${filename}`;
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+      'User-Agent': 'Portfolio-App',
+    };
+
+    // 1. Fetch current file SHA
+    const getRes = await fetch(url, { headers, cache: 'no-store' });
+    let sha = '';
+    if (getRes.ok) {
+      const fileInfo = await getRes.json();
+      sha = fileInfo.sha;
+    }
+
+    // 2. Commit updated JSON directly to GitHub main/master branch
+    const content = Buffer.from(JSON.stringify(data, null, 2)).toString('base64');
+    await fetch(url, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({
+        message: `Update ${filename} via Admin Console`,
+        content,
+        ...(sha ? { sha } : {}),
+      }),
+    });
+  } catch (error) {
+    console.error(`GitHub API sync error for ${filename}:`, error);
+  }
+}
 
 // Helper to read JSON file
 function readDataFile<T>(filename: string, defaultValue: T): T {
   ensureDirectoryExists();
   const filePath = path.join(DATA_DIR, filename);
-  
-  // If memory cache exists in production, return it
-  if (process.env.NODE_ENV === 'production' && memoryCaches[filename]) {
+
+  if (memoryCaches[filename]) {
     return memoryCaches[filename] as T;
   }
 
@@ -31,12 +76,7 @@ function readDataFile<T>(filename: string, defaultValue: T): T {
     }
     const raw = fs.readFileSync(filePath, 'utf-8');
     const parsed = JSON.parse(raw);
-    
-    // Cache in production
-    if (process.env.NODE_ENV === 'production') {
-      memoryCaches[filename] = parsed;
-    }
-    
+    memoryCaches[filename] = parsed;
     return parsed;
   } catch (error) {
     console.error(`Error reading file ${filename}:`, error);
@@ -49,18 +89,23 @@ function writeDataFile<T>(filename: string, data: T): boolean {
   ensureDirectoryExists();
   const filePath = path.join(DATA_DIR, filename);
 
-  // Always update memory cache
   memoryCaches[filename] = data;
 
+  // 1. Try local disk write (works in dev & VPS)
   try {
-    // Write to local disk (will fail on read-only environments like Vercel serverless)
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-    return true;
   } catch (error) {
-    console.error(`Warning: Could not write file ${filename} (likely in read-only production environment):`, error);
-    // Return true anyway because the memory cache was updated for the duration of the serverless runtime instance
-    return true;
+    // Read-only environment on Vercel lambda - handled gracefully
   }
+
+  // 2. Sync directly to GitHub repository if GITHUB_TOKEN is available
+  if (process.env.GITHUB_TOKEN) {
+    syncToGitHub(filename, data).catch((err) =>
+      console.error('Failed to sync to GitHub:', err)
+    );
+  }
+
+  return true;
 }
 
 /* ==========================================================================
@@ -131,7 +176,6 @@ export async function updateProject(id: string, updatedData: Partial<Project>): 
   const idx = projects.findIndex(p => p.id === id);
   if (idx === -1) return null;
 
-  // Re-generate slug if title changed
   const titleChanged = updatedData.title && updatedData.title !== projects[idx].title;
   const slug = titleChanged 
     ? updatedData.title!.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -309,7 +353,6 @@ export async function addJourneyEntry(entry: Omit<JourneyEntry, 'id'>): Promise<
     id: 'journey-' + Date.now().toString()
   };
   journey.push(newEntry);
-  // Sort journey by year descending (newest first) or ascending as needed. Let's sort by year descending
   journey.sort((a, b) => b.year.localeCompare(a.year));
   await saveJourney(journey);
   return newEntry;
