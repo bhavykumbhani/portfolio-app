@@ -1,0 +1,22 @@
+[
+  { "id": "html", "name": "HTML", "category": "Web Development", "status": "Advanced" },
+  { "id": "css", "name": "CSS", "category": "Web Development", "status": "Advanced" },
+  { "id": "javascript", "name": "JavaScript", "category": "Web Development", "status": "Advanced" },
+  { "id": "typescript", "name": "TypeScript", "category": "Programming", "status": "Building With" },
+  { "id": "react", "name": "React", "category": "Web Development", "status": "Building With" },
+  { "id": "nextjs", "name": "Next.js", "category": "Web Development", "status": "Building With" },
+  { "id": "tailwind", "name": "Tailwind CSS", "category": "Web Development", "status": "Building With" },
+  { "id": "python", "name": "Python", "category": "Programming", "status": "Building With" },
+  { "id": "java", "name": "Java", "category": "Programming", "status": "Familiar" },
+  { "id": "cpp", "name": "C/C++", "category": "Programming", "status": "Familiar" },
+  { "id": "ml", "name": "Machine Learning", "category": "AI / ML", "status": "Learning" },
+  { "id": "ai", "name": "Artificial Intelligence", "category": "AI / ML", "status": "Learning" },
+  { "id": "pandas", "name": "Pandas", "category": "Data Analytics", "status": "Learning" },
+  { "id": "numpy", "name": "NumPy", "category": "Data Analytics", "status": "Learning" },
+  { "id": "datavis", "name": "Data Visualization", "category": "Data Analytics", "status": "Learning" },
+  { "id": "sql", "name": "SQL", "category": "Data Analytics", "status": "Familiar" },
+  { "id": "git", "name": "Git", "category": "Tools", "status": "Building With" },
+  { "id": "github", "name": "GitHub", "category": "Tools", "status": "Building With" },
+  { "id": "vscode", "name": "VS Code", "category": "Tools", "status": "Advanced" },
+  { "id": "vercel", "name": "Vercel", "category": "Tools", "status": "Building With" }
+]

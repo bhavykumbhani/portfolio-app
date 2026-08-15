@@ -1,0 +1,22 @@
+[
+  {
+    "degree": "Master of Computer Applications (MCA)",
+    "institution": "GLS university, Ahmedabad",
+    "location": "Gujarat, India",
+    "startDate": "2026-08",
+    "endDate": "Present",
+    "description": "Focusing on advanced computer applications, web development technologies, system design, and exploring AI, ML, and data analytics.",
+    "grade": "Pursuing",
+    "id": "mca"
+  },
+  {
+    "degree": "Bachelor's Degree in Computer Applications",
+    "institution": "Veer Narmad South Gujarat University, Surat",
+    "location": "Gujarat, India",
+    "startDate": "2023-06",
+    "endDate": "2026-05",
+    "description": "Acquired solid foundations in programming, database design, software engineering practices, and web fundamentals.",
+    "grade": "First Class",
+    "id": "bachelors"
+  }
+]

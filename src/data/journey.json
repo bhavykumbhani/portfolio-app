@@ -1,0 +1,18 @@
+[
+  {
+    "id": "j-2026-mca",
+    "year": "2026",
+    "title": "MCA — Semester 1",
+    "description": "Began Master of Computer Applications (MCA), building foundations in web development, programming, AI/ML and data analytics.",
+    "type": "Education",
+    "status": "In Progress"
+  },
+  {
+    "id": "j-2023-bca",
+    "year": "2023",
+    "title": "Began Undergraduate Studies",
+    "description": "Entered the technology and computer science space, focusing on object-oriented programming, databases, and software fundamentals.",
+    "type": "Education",
+    "status": "Completed"
+  }
+]

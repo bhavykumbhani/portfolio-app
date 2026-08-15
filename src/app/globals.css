@@ -1,26 +1,138 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-yellow: var(--accent-yellow);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border-custom: var(--border-custom);
+  --color-card-bg: var(--card-bg);
+
+  /* Map old emerald utility classes to our new theme variables to guarantee complete coverage */
+  --color-emerald-500: var(--accent);
+  --color-emerald-600: var(--accent);
+  --color-emerald-700: var(--accent);
+  --color-emerald-800: var(--accent-hover);
+  --color-emerald-400: var(--accent-hover);
+  --color-emerald-300: var(--accent-hover);
+  --color-emerald-200: var(--accent-hover);
+  --color-emerald-100: var(--accent-hover);
+  --color-emerald-50: var(--accent-hover);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc; /* Slate-50 (Soft white) */
+  --foreground: #0f172a; /* Slate-900 */
+  --muted-foreground: #64748b; /* Slate-550 */
+  --card-bg: #ffffff; /* White */
+  --border-custom: #e2e8f0; /* Slate-200 */
+  
+  --accent: #2563eb; /* Primary Blue-600 */
+  --accent-hover: #1d4ed8; /* Blue-700 */
+  --accent-blue: #3b82f6; /* Blue-500 */
+  --accent-yellow: #d97706; /* Amber-600 (Yellowish) */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #030712; /* Deep Navy Blue-Black */
+  --foreground: #f8fafc; /* Slate-50 */
+  --muted-foreground: #94a3b8; /* Slate-400 */
+  --card-bg: #0f172a; /* Slate-900 (Deep Blue Card) */
+  --border-custom: #1e293b; /* Slate-800 border */
+  
+  --accent: #fbbf24; /* Primary Gold/Yellow Accent */
+  --accent-hover: #f59e0b; /* Amber Accent */
+  --accent-blue: #3b82f6; /* Blue highlight */
+  --accent-yellow: #fbbf24; /* Yellow highlight */
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-custom);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* Modern Glowing Grid Background */
+.grid-bg-dark {
+  background-image: 
+    linear-gradient(to right, rgba(59, 130, 246, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(59, 130, 246, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.grid-bg-light {
+  background-image: 
+    linear-gradient(to right, rgba(37, 99, 235, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(37, 99, 235, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.light .glass-panel {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Neon Glow Effect */
+.glow-accent {
+  box-shadow: 0 0 20px 2px rgba(251, 191, 36, 0.15);
+}
+
+.light .glow-accent {
+  box-shadow: 0 0 20px 2px rgba(37, 99, 235, 0.08);
+}
+
+/* Terminal Animations */
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.cursor-blink::after {
+  content: '▋';
+  animation: blink 1s step-start infinite;
+  color: var(--accent);
+}
+
+/* Custom Fade in animations */
+.fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
