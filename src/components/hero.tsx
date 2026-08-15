@@ -55,8 +55,16 @@ export function Hero({ profile }: HeroProps) {
               <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </a>
             <a
-              href={profile.resumeUrl || '#'}
-              download
+              href={
+                profile.resumeUrl &&
+                !profile.resumeUrl.includes(':\\') &&
+                !profile.resumeUrl.startsWith('"')
+                  ? profile.resumeUrl
+                  : '/resume.pdf'
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              download="Bhavya_H_Kumbhani_Resume.pdf"
               className="inline-flex items-center justify-center space-x-2 px-6 py-3 font-medium border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition-all"
             >
               <Download className="h-4 w-4 text-zinc-500" />

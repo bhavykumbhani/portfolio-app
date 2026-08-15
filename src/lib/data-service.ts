@@ -123,6 +123,12 @@ export async function getProfile(): Promise<Profile> {
     resumeUrl: '',
   });
 
+  const rawResumeUrl = db ? (await ProfileModel.findOne({}).lean())?.resumeUrl : defaultProfile.resumeUrl;
+  const sanitizedResumeUrl =
+    rawResumeUrl && !rawResumeUrl.includes(':\\') && !rawResumeUrl.startsWith('"')
+      ? rawResumeUrl
+      : defaultProfile.resumeUrl || '/resume.pdf';
+
   if (db) {
     try {
       let doc = await ProfileModel.findOne({}).lean();
@@ -140,7 +146,7 @@ export async function getProfile(): Promise<Profile> {
         location: doc.location,
         githubUrl: doc.githubUrl || '',
         linkedinUrl: doc.linkedinUrl || '',
-        resumeUrl: doc.resumeUrl || '',
+        resumeUrl: sanitizedResumeUrl,
         statusText: doc.statusText || '',
       };
     } catch (err) {
@@ -148,7 +154,10 @@ export async function getProfile(): Promise<Profile> {
     }
   }
 
-  return defaultProfile;
+  return {
+    ...defaultProfile,
+    resumeUrl: sanitizedResumeUrl,
+  };
 }
 
 export async function updateProfile(data: Profile): Promise<Profile> {

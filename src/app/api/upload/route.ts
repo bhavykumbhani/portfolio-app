@@ -14,6 +14,24 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    // If running on Vercel / Serverless, local filesystem writes are non-persistent & NOT served by Next.js static asset server.
+    // Therefore, convert to Data URL so the file is saved directly in database/profile and works INSTANTLY live.
+    const isVercel = Boolean(process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV);
+
+    if (isVercel) {
+      const mimeType = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream');
+      const base64 = buffer.toString('base64');
+      const dataUrl = `data:${mimeType};base64,${base64}`;
+
+      return NextResponse.json({
+        success: true,
+        url: dataUrl,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
+    }
+
     // Clean file name
     const timestamp = Date.now();
     const sanitizedOriginalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
