@@ -82,11 +82,19 @@ export default async function ProjectDetailPage({ params }: PageProps) {
 
         {/* Large Image Visual Area */}
         <div className="relative h-64 sm:h-96 w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 overflow-hidden flex items-center justify-center">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 flex flex-col justify-center items-center p-6 text-center select-none font-mono">
-            <Layers className="h-16 w-16 text-emerald-600/30 dark:text-emerald-500/30 mb-3" />
-            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">{project.category} Core Showcase</span>
-            <span className="text-sm font-bold text-zinc-700 dark:text-zinc-400 mt-2 truncate max-w-[80%]">{project.title}</span>
-          </div>
+          {project.image ? (
+            <img
+              src={project.image}
+              alt={project.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 flex flex-col justify-center items-center p-6 text-center select-none font-mono">
+              <Layers className="h-16 w-16 text-emerald-600/30 dark:text-emerald-500/30 mb-3" />
+              <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">{project.category} Core Showcase</span>
+              <span className="text-sm font-bold text-zinc-700 dark:text-zinc-400 mt-2 truncate max-w-[80%]">{project.title}</span>
+            </div>
+          )}
         </div>
 
         {/* Action Links */}

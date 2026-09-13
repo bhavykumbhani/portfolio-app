@@ -106,25 +106,33 @@ export function Projects({ projects }: ProjectsProps) {
                 key={project.id}
                 className="group relative flex flex-col rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/30 overflow-hidden hover:shadow-md hover:border-emerald-500/20 dark:hover:border-emerald-500/20 transition-all duration-300"
               >
-                {/* Visual Area / Placeholder Image */}
+                {/* Visual Area / Project Image */}
                 <div className="relative h-48 bg-zinc-100 dark:bg-zinc-900 overflow-hidden border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-center">
-                  {/* Since we don't have actual uploads yet, we can render a beautiful stylized icon grid code mockup */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 group-hover:scale-105 transition-transform duration-500 flex flex-col justify-center items-center p-6 text-center select-none font-mono">
-                    <Folder className="h-10 w-10 text-emerald-600/30 dark:text-emerald-500/30 mb-2 group-hover:scale-110 transition-transform" />
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">{project.category} Project</span>
-                    <span className="text-xs font-bold text-zinc-700 dark:text-zinc-400 mt-1 truncate max-w-[80%]">{project.title}</span>
-                  </div>
+                  {project.image ? (
+                    <img
+                      src={project.image}
+                      alt={project.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    /* Fallback graphic mockup when no image is uploaded */
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 group-hover:scale-105 transition-transform duration-500 flex flex-col justify-center items-center p-6 text-center select-none font-mono">
+                      <Folder className="h-10 w-10 text-emerald-600/30 dark:text-emerald-500/30 mb-2 group-hover:scale-110 transition-transform" />
+                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">{project.category} Project</span>
+                      <span className="text-xs font-bold text-zinc-700 dark:text-zinc-400 mt-1 truncate max-w-[80%]">{project.title}</span>
+                    </div>
+                  )}
 
                   {/* Featured Badge */}
                   {project.featured && (
-                    <div className="absolute top-3 right-3 inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                    <div className="absolute top-3 right-3 inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 z-10 backdrop-blur-sm">
                       <Star className="h-3 w-3 fill-emerald-500/30" />
                       <span>Featured</span>
                     </div>
                   )}
 
                   {/* Status Badge */}
-                  <div className="absolute bottom-3 left-3 px-2 py-0.5 rounded bg-zinc-950/80 text-[10px] font-mono text-zinc-300 border border-zinc-800">
+                  <div className="absolute bottom-3 left-3 px-2 py-0.5 rounded bg-zinc-950/80 text-[10px] font-mono text-zinc-300 border border-zinc-800 z-10 backdrop-blur-sm">
                     {project.status}
                   </div>
                 </div>

@@ -63,6 +63,9 @@ export function Experience({ experience }: ExperienceProps) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-zinc-500 dark:text-zinc-400">
+                  {exp.logo && (
+                    <img src={exp.logo} alt={exp.company} className="h-6 w-6 object-contain rounded" />
+                  )}
                   <span className="font-semibold text-zinc-700 dark:text-zinc-300">{exp.company}</span>
                   <span>•</span>
                   <span className="flex items-center space-x-1">

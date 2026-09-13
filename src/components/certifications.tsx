@@ -40,9 +40,13 @@ export function Certifications({ certifications }: CertificationsProps) {
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between">
-                    <div className="p-2 rounded bg-teal-500/10 text-teal-600 dark:text-teal-400">
-                      <FileBadge className="h-5 w-5" />
-                    </div>
+                    {cert.image ? (
+                      <img src={cert.image} alt={cert.name} className="h-10 w-10 object-contain rounded border border-zinc-200 dark:border-zinc-800" />
+                    ) : (
+                      <div className="p-2 rounded bg-teal-500/10 text-teal-600 dark:text-teal-400">
+                        <FileBadge className="h-5 w-5" />
+                      </div>
+                    )}
                     <div className="flex items-center space-x-1 text-xs text-zinc-500 font-mono">
                       <Calendar className="h-3 w-3" />
                       <span>{cert.date}</span>
