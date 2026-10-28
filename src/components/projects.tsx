@@ -111,7 +111,9 @@ export function Projects({ projects }: ProjectsProps) {
                   {project.image ? (
                     <img
                       src={project.image}
-                      alt={project.title}
+                      alt={`${project.title} - Project by Bhavy Kumbhani`}
+                      title={`${project.title} by Bhavy Kumbhani`}
+                      loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (

@@ -106,7 +106,12 @@ export function Hero({ profile }: HeroProps) {
             <div className="relative w-48 h-48 sm:w-56 sm:h-56 rounded-full border-4 border-amber-500/40 dark:border-amber-400/40 overflow-hidden shadow-lg dark:shadow-blue-500/5 hover:scale-[1.03] transition-transform duration-300 pointer-events-none z-10">
               <img
                 src={profile.avatarUrl}
-                alt={profile.name}
+                alt="Bhavy Kumbhani - Web Developer & AI/ML Explorer"
+                title="Bhavy Kumbhani - Web Developer"
+                width={224}
+                height={224}
+                loading="eager"
+                fetchPriority="high"
                 className="w-full h-full object-cover select-none"
               />
             </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getProjects } from '@/lib/data-service';
 import { Navbar } from '@/components/navbar';
@@ -12,6 +13,60 @@ interface PageProps {
 }
 
 export const revalidate = 0; // Ensure live data updates are fetched
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const projects = await getProjects();
+  const project = projects.find((p) => p.slug === slug);
+
+  if (!project) {
+    return {
+      title: 'Project Not Found | Bhavy Kumbhani',
+    };
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://bhavy-kumbhani-portfolio.vercel.app';
+  const pageUrl = `${siteUrl}/projects/${project.slug}`;
+  const imageUrl = project.image?.startsWith('http')
+    ? project.image
+    : project.image
+    ? `${siteUrl}${project.image.startsWith('/') ? '' : '/'}${project.image}`
+    : `${siteUrl}/images/bhavy-portrait.png`;
+
+  return {
+    title: `${project.title} | Bhavy Kumbhani Project Showcase`,
+    description: project.description || `Explore ${project.title}, built by Bhavy Kumbhani.`,
+    keywords: [
+      project.title,
+      `${project.title} Bhavy Kumbhani`,
+      project.category,
+      ...project.technologies,
+      'Bhavy Kumbhani Projects',
+      'Web Development Portfolio',
+    ],
+    alternates: {
+      canonical: `/projects/${project.slug}`,
+    },
+    openGraph: {
+      type: 'article',
+      url: pageUrl,
+      title: `${project.title} | Bhavy Kumbhani`,
+      description: project.description,
+      images: [
+        {
+          url: imageUrl,
+          alt: `${project.title} - Built by Bhavy Kumbhani`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${project.title} | Bhavy Kumbhani`,
+      description: project.description,
+      images: [imageUrl],
+    },
+  };
+}
 
 export default async function ProjectDetailPage({ params }: PageProps) {
   const { slug } = await params;
@@ -85,7 +140,8 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           {project.image ? (
             <img
               src={project.image}
-              alt={project.title}
+              alt={`${project.title} - Showcase by Bhavy Kumbhani`}
+              title={`${project.title} by Bhavy Kumbhani`}
               className="w-full h-full object-cover"
             />
           ) : (

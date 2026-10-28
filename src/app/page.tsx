@@ -43,8 +43,84 @@ export default async function Page() {
     getJourney(),
   ]);
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://bhavy-kumbhani-portfolio.vercel.app';
+  const avatarAbsoluteUrl = profile.avatarUrl?.startsWith('http')
+    ? profile.avatarUrl
+    : `${siteUrl}${profile.avatarUrl?.startsWith('/') ? '' : '/'}${profile.avatarUrl || 'images/bhavy-portrait.png'}`;
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Person',
+        '@id': `${siteUrl}/#person`,
+        name: profile.name,
+        alternateName: [
+          'Bhavya Kumbhani',
+          'Bhavya H Kumbhani',
+          'Bhavy',
+          'bhkumbhani',
+        ],
+        url: siteUrl,
+        image: avatarAbsoluteUrl,
+        jobTitle: profile.currentRole,
+        description: profile.longBio || profile.shortBio,
+        email: profile.email ? `mailto:${profile.email}` : undefined,
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Ahmedabad',
+          addressRegion: 'Gujarat',
+          addressCountry: 'India',
+        },
+        alumniOf: education.map((edu) => ({
+          '@type': 'EducationalOrganization',
+          name: edu.institution,
+          description: edu.degree,
+        })),
+        sameAs: [
+          profile.githubUrl,
+          profile.linkedinUrl,
+          siteUrl,
+        ].filter(Boolean),
+        knowsAbout: skills.map((s) => s.name),
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${siteUrl}/#website`,
+        url: siteUrl,
+        name: `${profile.name} | Official Portfolio`,
+        description: profile.shortBio,
+        publisher: {
+          '@id': `${siteUrl}/#person`,
+        },
+        inLanguage: 'en-US',
+      },
+      {
+        '@type': 'ProfilePage',
+        '@id': `${siteUrl}/#webpage`,
+        url: siteUrl,
+        name: `${profile.name} - Web Developer & AI/ML Explorer Portfolio`,
+        isPartOf: {
+          '@id': `${siteUrl}/#website`,
+        },
+        about: {
+          '@id': `${siteUrl}/#person`,
+        },
+        mainEntity: {
+          '@id': `${siteUrl}/#person`,
+        },
+      },
+    ],
+  };
+
   return (
     <>
+      {/* Schema.org Structured Data for Google Search Engine Knowledge Graph */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* Dynamic Grid Background overlay */}
       <div className="absolute inset-0 -z-50 pointer-events-none opacity-[0.4] dark:opacity-[0.6]">
         <div className="absolute inset-0 bg-white dark:bg-[#09090b]" />
